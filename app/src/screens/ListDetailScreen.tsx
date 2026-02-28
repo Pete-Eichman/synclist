@@ -16,6 +16,7 @@ import { AddItemInput } from '../components/AddItemInput';
 import { ConnectionBadge } from '../components/ConnectionBadge';
 import { DraggableItemList } from '../components/DraggableItemList';
 import { ItemRow } from '../components/ItemRow';
+import { MemberAvatars } from '../components/MemberAvatars';
 import { ListsStackParamList } from '../navigation/index';
 import { api } from '../services/api';
 import { ConnectionStatus, socketManager } from '../services/socket';
@@ -39,6 +40,7 @@ export function ListDetailScreen() {
   const applyItemReordered = useListStore((s) => s.applyItemReordered);
 
   const [connStatus, setConnStatus] = useState<ConnectionStatus>('connecting');
+  const [presentMembers, setPresentMembers] = useState<string[]>([]);
 
   const items = list?.items ?? [];
   const unchecked = items.filter((i) => !i.checked).sort((a, b) => a.position - b.position);
@@ -67,6 +69,12 @@ export function ListDetailScreen() {
           break;
         case 'item_reordered':
           applyItemReordered(listId, event.payload.items);
+          break;
+        case 'user_joined':
+          setPresentMembers((prev) => [...new Set([...prev, event.payload.deviceId])]);
+          break;
+        case 'user_left':
+          setPresentMembers((prev) => prev.filter((id) => id !== event.payload.deviceId));
           break;
       }
     });
@@ -101,6 +109,15 @@ export function ListDetailScreen() {
       headerRight: () => <ConnectionBadge status={connStatus} />,
     });
   }, [navigation, connStatus]);
+
+  // Presence avatars in header left
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <MemberAvatars members={presentMembers} ownDeviceId={deviceId} />
+      ),
+    });
+  }, [navigation, presentMembers, deviceId]);
 
   const handleAddItem = (text: string) => {
     // item_added: server echoes back to sender → applied via onEvent handler

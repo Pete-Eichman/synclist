@@ -14,7 +14,9 @@ export type ServerEvent =
   | { type: 'item_checked'; payload: ListItem }
   | { type: 'item_unchecked'; payload: ListItem }
   | { type: 'item_deleted'; payload: { id: string } }
-  | { type: 'item_reordered'; payload: { items: { id: string; position: number }[] } };
+  | { type: 'item_reordered'; payload: { items: { id: string; position: number }[] } }
+  | { type: 'user_joined'; payload: { deviceId: string } }
+  | { type: 'user_left'; payload: { deviceId: string } };
 
 type EventListener = (event: ServerEvent) => void;
 type StatusListener = (status: ConnectionStatus) => void;
