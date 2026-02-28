@@ -2,9 +2,9 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import {
-  FlatList,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   Share,
   StyleSheet,
   Text,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { AddItemInput } from '../components/AddItemInput';
 import { ConnectionBadge } from '../components/ConnectionBadge';
+import { DraggableItemList } from '../components/DraggableItemList';
 import { ItemRow } from '../components/ItemRow';
 import { ListsStackParamList } from '../navigation/index';
 import { api } from '../services/api';
@@ -41,10 +42,6 @@ export function ListDetailScreen() {
   const items = list?.items ?? [];
   const unchecked = items.filter((i) => !i.checked).sort((a, b) => a.position - b.position);
   const checked = items.filter((i) => i.checked).sort((a, b) => a.position - b.position);
-  const listData = [
-    ...unchecked.map((item) => ({ item, dimmed: false })),
-    ...checked.map((item) => ({ item, dimmed: true })),
-  ];
 
   // Load items and open WebSocket on mount; disconnect on unmount
   useEffect(() => {
@@ -133,6 +130,12 @@ export function ListDetailScreen() {
     socketManager.send({ type: 'item_deleted', listId, deviceId, payload: { id: itemId } });
   };
 
+  const handleReorder = (updates: { id: string; position: number }[]) => {
+    // item_reordered: server does NOT echo to sender → apply locally now
+    applyItemReordered(listId, updates);
+    socketManager.send({ type: 'item_reordered', listId, deviceId, payload: { items: updates } });
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -146,24 +149,30 @@ export function ListDetailScreen() {
           </Text>
         </View>
       )}
-      <FlatList
-        data={listData}
-        keyExtractor={({ item }) => item.id}
-        renderItem={({ item: { item, dimmed } }) => (
-          <ItemRow
-            item={item}
-            isOwn={item.created_by === deviceId}
-            dimmed={dimmed}
-            onToggle={() => handleToggle(item.id, item.checked)}
-            onDelete={() => handleDelete(item.id)}
-          />
-        )}
-        ListEmptyComponent={
+      <ScrollView keyboardShouldPersistTaps="handled">
+        {items.length === 0 && (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>No items yet. Add something below.</Text>
           </View>
-        }
-      />
+        )}
+        <DraggableItemList
+          items={unchecked}
+          deviceId={deviceId}
+          onReorder={handleReorder}
+          onToggle={handleToggle}
+          onDelete={handleDelete}
+        />
+        {checked.map((item) => (
+          <ItemRow
+            key={item.id}
+            item={item}
+            isOwn={item.created_by === deviceId}
+            dimmed={true}
+            onToggle={() => handleToggle(item.id, item.checked)}
+            onDelete={() => handleDelete(item.id)}
+          />
+        ))}
+      </ScrollView>
       <AddItemInput onSubmit={handleAddItem} />
     </KeyboardAvoidingView>
   );
