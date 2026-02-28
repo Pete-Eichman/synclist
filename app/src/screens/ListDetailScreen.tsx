@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { AddItemInput } from '../components/AddItemInput';
 import { ConnectionBadge } from '../components/ConnectionBadge';
 import { DraggableItemList } from '../components/DraggableItemList';
@@ -163,14 +164,20 @@ export function ListDetailScreen() {
           onDelete={handleDelete}
         />
         {checked.map((item) => (
-          <ItemRow
+          <Animated.View
             key={item.id}
-            item={item}
-            isOwn={item.created_by === deviceId}
-            dimmed={true}
-            onToggle={() => handleToggle(item.id, item.checked)}
-            onDelete={() => handleDelete(item.id)}
-          />
+            entering={FadeIn.duration(220)}
+            exiting={FadeOut.duration(200)}
+            layout={LinearTransition.duration(200)}
+          >
+            <ItemRow
+              item={item}
+              isOwn={item.created_by === deviceId}
+              dimmed={true}
+              onToggle={() => handleToggle(item.id, item.checked)}
+              onDelete={() => handleDelete(item.id)}
+            />
+          </Animated.View>
         ))}
       </ScrollView>
       <AddItemInput onSubmit={handleAddItem} />
