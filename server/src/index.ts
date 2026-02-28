@@ -3,8 +3,11 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import { WebSocketServer } from 'ws';
+import { parse } from 'url';
 import pool from './db/pool';
 import { createListRouter } from './routes/lists';
+import { createRoomMap, joinRoom, leaveRoom } from './ws/rooms';
+import { handleMessage } from './ws/handlers';
 
 const PORT = process.env.PORT ?? 3001;
 
@@ -20,12 +23,28 @@ app.use('/lists', createListRouter(pool));
 
 const server = http.createServer(app);
 
-// WebSocket server — all real-time list activity goes through here
 const wss = new WebSocketServer({ server });
+const rooms = createRoomMap();
 
-wss.on('connection', (ws) => {
-  // TODO: room join + action handling (feat/websocket-rooms)
-  ws.on('close', () => {});
+wss.on('connection', (ws, req) => {
+  // Clients connect via ws://host?listId=<id>&deviceId=<id>
+  const { query } = parse(req.url ?? '', true);
+  const listId = query.listId as string | undefined;
+
+  if (!listId) {
+    ws.close(1008, 'listId is required');
+    return;
+  }
+
+  joinRoom(rooms, listId, ws);
+
+  ws.on('message', (data) => {
+    handleMessage(ws, data.toString(), pool, rooms);
+  });
+
+  ws.on('close', () => {
+    leaveRoom(rooms, listId, ws);
+  });
 });
 
 server.listen(PORT, () => {
