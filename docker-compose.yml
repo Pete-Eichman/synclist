@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: synclist
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  server:
+    build:
+      context: ./server
+      target: builder         # use the builder stage so ts-node-dev works locally
+    command: npm run dev
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/synclist
+    volumes:
+      - ./server/src:/app/src  # live reload in dev
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
