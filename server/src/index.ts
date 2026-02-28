@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import { WebSocketServer } from 'ws';
+import pool from './db/pool';
+import { createListRouter } from './routes/lists';
 
 const PORT = process.env.PORT ?? 3001;
 
@@ -14,7 +16,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-// TODO: mount list routes here (Phase 1)
+app.use('/lists', createListRouter(pool));
 
 const server = http.createServer(app);
 
@@ -22,7 +24,7 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws) => {
-  // TODO: room join + action handling (Phase 1)
+  // TODO: room join + action handling (feat/websocket-rooms)
   ws.on('close', () => {});
 });
 
