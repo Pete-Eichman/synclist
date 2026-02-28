@@ -2,6 +2,8 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  FadeInDown,
+  FadeOut,
   runOnJS,
   SharedValue,
   useAnimatedStyle,
@@ -146,7 +148,11 @@ function DraggableRow({
   });
 
   return (
-    <Animated.View style={[styles.rowWrapper, animStyle]}>
+    <Animated.View
+      style={[styles.rowWrapper, animStyle]}
+      entering={FadeInDown.duration(220)}
+      exiting={FadeOut.duration(200)}
+    >
       <GestureDetector gesture={pan}>
         <View style={styles.handle} hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}>
           <Text style={styles.handleIcon}>≡</Text>
