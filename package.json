@@ -1,0 +1,12 @@
+{
+  "name": "synclist",
+  "private": true,
+  "workspaces": [
+    "server"
+  ],
+  "scripts": {
+    "server": "npm --workspace=server run dev",
+    "test": "npm --workspace=server run test",
+    "lint": "npm --workspace=server run lint"
+  }
+}
