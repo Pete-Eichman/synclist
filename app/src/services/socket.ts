@@ -1,4 +1,5 @@
 import { ListItem } from './api';
+import * as offlineQueue from '../db/offlineQueue';
 
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL ?? 'ws://localhost:3001';
 
@@ -56,6 +57,8 @@ export function createSocketManager(): SocketManager {
     ws.onopen = () => {
       backoffMs = INITIAL_BACKOFF_MS; // reset on successful connect
       emitStatus('connected');
+      // Drain any actions queued while the connection was down
+      offlineQueue.flush((action) => ws?.send(JSON.stringify(action))).catch(console.error);
     };
 
     ws.onmessage = (e) => {
@@ -102,8 +105,9 @@ export function createSocketManager(): SocketManager {
     send(action) {
       if (ws?.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(action));
+      } else {
+        offlineQueue.enqueue(action).catch(console.error);
       }
-      // Offline queue (Phase 3) will handle the case where ws isn't open
     },
 
     onEvent(listener) {

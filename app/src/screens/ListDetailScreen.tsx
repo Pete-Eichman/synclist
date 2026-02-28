@@ -139,6 +139,13 @@ export function ListDetailScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
     >
+      {connStatus !== 'connected' && (
+        <View style={styles.offlineBanner}>
+          <Text style={styles.offlineBannerText}>
+            Offline — changes will sync when reconnected
+          </Text>
+        </View>
+      )}
       <FlatList
         data={listData}
         keyExtractor={({ item }) => item.id}
@@ -187,5 +194,15 @@ const styles = StyleSheet.create({
   emptyText: {
     color: colors.textSecondary,
     fontSize: 14,
+  },
+  offlineBanner: {
+    backgroundColor: colors.primaryDim,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  offlineBannerText: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    textAlign: 'center',
   },
 });
